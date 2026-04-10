@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐶 WEBHOOK DOGGY SENDER 🐶</title>
+
+<style>
+@keyframes vibrate {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+@keyframes rainbow {
+  0% { color: red; } 25% { color: yellow; } 50% { color: lime; } 75% { color: cyan; } 100% { color: magenta; }
+}
+
+:root {
+  --bg: #ff00ff; /* EYE BLEED PINK */
+  --card-bg: #ffff00; /* BRIGHT YELLOW */
+  --input-bg: #00ffff; /* CYAN */
+  --accent: #ff4500;
+  --text: #000000;
+  --radius: 5px; /* Tiny ugly corners */
+}
+
+* { 
+    box-sizing: border-box; 
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'  width='40' height='48' viewport='0 0 100 100' style='fill:black;font-size:24px;'><text y='50%'>🐶</text></svg>"), auto !important;
+}
+
+body {
+  margin: 0;
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
+  background-color: var(--bg);
+  background-image: url("https://www.transparenttextures.com/patterns/paws.png");
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  background: var(--card-bg);
+  padding: 10px;
+  width: 100%;
+  max-width: 450px;
+  border: 10px ridge #00ff00; /* UGLY LIME RIDGE */
+  box-shadow: 20px 20px 0px #4b0082;
+  transform: rotate(-1deg);
+}
+
+.return-link {
+  font-family: "Papyrus", serif;
+  font-size: 20px;
+  color: blue;
+  text-decoration: underline;
+  display: block;
+  margin-bottom: 10px;
+  animation: rainbow 1s infinite;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 3rem;
+  font-family: "Impact", sans-serif;
+  -webkit-text-stroke: 2px red;
+  color: white;
+  animation: vibrate 0.1s infinite;
+}
+
+.label {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff00ff;
+  background: black;
+  display: inline-block;
+  transform: skewX(-20deg);
+  padding: 5px;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  background: var(--input-bg);
+  border: 5px dotted magenta;
+  border-radius: 0px;
+  color: #ff0000 !important;
+  font-family: "Comic Sans MS";
+  font-size: 25px;
+  font-weight: 900;
+  resize: none; 
+  height: 150px;
+  outline: none;
+}
+
+.char-count {
+  background: yellow;
+  color: black;
+  border: 2px solid black;
+  font-size: 20px;
+  float: left;
+}
+
+.upload-area {
+  margin-top: 50px;
+  padding: 30px;
+  background: lime;
+  border: 5px dashed blue;
+  color: black;
+  font-size: 25px;
+  font-weight: 800;
+  text-decoration: blink;
+}
+
+.file-item {
+  background: white;
+  border: 3px solid red;
+  margin-top: 5px;
+  font-size: 10px;
+}
+
+.btn-group {
+  margin-top: 20px;
+}
+
+button {
+  padding: 20px;
+  width: 100%;
+  border: 10px outset white;
+  font-family: "Comic Sans MS";
+  font-weight: 900;
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+#sendBtn {
+  background: #ff0000;
+  color: #ffff00;
+}
+
+#sendBtn:hover {
+    transform: scale(1.5);
+    z-index: 100;
+}
+
+#resetBtn {
+  background: gray;
+  color: white;
+}
+
+.log-section {
+  margin-top: 20px;
+  border: 2px solid black;
+  background: white;
+}
+
+.log-item {
+  color: green;
+  font-size: 15px;
+  border-bottom: 5px solid red;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <a href="#" class="return-link">GO BACK TO HOME NOW!!</a>
+
+  <h1>DOG SEND!!</h1>
+
+  <span class="label">PUT WORDS HERE:</span>
+  <textarea id="msg" placeholder="BARK BARK BARK BARK BARK"></textarea>
+  <div class="char-count" id="charCount">?? CHARACTERS LOL</div>
+
+  <input type="file" id="fileInput" multiple style="display:none;">
+  <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+    CLICK ME TO PUT PIX!!! 📎
+  </div>
+
+  <div class="file-list" id="fileList"></div>
+
+  <div class="btn-group">
+    <button id="sendBtn" onclick="sendWebhook()">!!! SEND TO DISCORD !!!</button>
+    <button id="resetBtn" onclick="resetForm()">DELETE EVERYTHING!!!!</button>
+  </div>
+
+  <div class="log-section">
+    <span class="label" style="transform:none;">PREVIOUS BARKS:</span>
+    <div id="logList"></div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_WEBHOOK = "https://discord.com/api/webhooks/1459089391921397848/_l2suFwCBs_lXC8M1CEm5birlaOh7a987NlnqyxDSWT3dRBS7Cxk7D5Nfc3losz7W0kd";
+const DEFAULT_BOT_NAME = "DOGGY BARKER 🐶";
+const CHUNK_SIZE = 1990;
+
+const msgInput = document.getElementById("msg");
+const charCount = document.getElementById("charCount");
+const fileInput = document.getElementById("fileInput");
+const fileList = document.getElementById("fileList");
+const sendBtn = document.getElementById("sendBtn");
+
+let selectedFiles = [];
+
+msgInput.addEventListener("input", () => {
+  const len = msgInput.value.length;
+  charCount.innerText = `${len} LETTERS FOR THE DOG`;
+});
+
+fileInput.addEventListener("change", (e) => {
+  selectedFiles = selectedFiles.concat(Array.from(e.target.files));
+  renderFiles();
+});
+
+function renderFiles() {
+  fileList.innerHTML = selectedFiles.map((f, i) => `
+    <div class="file-item">FILE: ${f.name} <span style="color:red; font-size:30px" onclick="removeFile(${i})">[X]</span></div>
+  `).join('');
+}
+
+function removeFile(i) { selectedFiles.splice(i, 1); renderFiles(); }
+
+async function sendWebhook() {
+  sendBtn.innerText = "BARKING...";
+  const formData = new FormData();
+  formData.append("payload_json", JSON.stringify({
+    username: DEFAULT_BOT_NAME,
+    content: msgInput.value || "WOOF!"
+  }));
+  selectedFiles.forEach((f, i) => formData.append(`file${i}`, f));
+
+  try {
+    await fetch(DEFAULT_WEBHOOK, { method: "POST", body: formData });
+    alert("DOGGY SENT THE MESSAGE!!!!");
+    addLog(msgInput.value || "WOOF");
+    resetForm();
+  } catch (err) {
+    alert("DOGGY FAILED!!!! RUFF!!!");
+  }
+  sendBtn.innerText = "!!! SEND TO DISCORD !!!";
+}
+
+function addLog(msg) {
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerText = "DOG SAID: " + msg;
+    document.getElementById('logList').prepend(item);
+}
+
+function resetForm() {
+  msgInput.value = "";
+  selectedFiles = [];
+  renderFiles();
+}
+</script>
+
+</body>
+</html>

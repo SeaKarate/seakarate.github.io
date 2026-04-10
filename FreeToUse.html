@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webhook Sender | Lite</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0a0a0a;
+  --card-bg: #141414;
+  --input-bg: #1f1f1f;
+  --accent: #ffffff;
+  --accent-soft: #2a2a2a;
+  --text: #ffffff;
+  --text-dim: #888888;
+  --danger: #ff4d4d;
+  --success: #00ff88;
+  --radius: 32px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+.container {
+  background: var(--card-bg);
+  padding: 40px;
+  width: 100%;
+  max-width: 480px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent-soft);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+  position: relative; 
+}
+
+.return-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 30px;
+  transition: all 0.2s ease;
+}
+
+.return-link:hover { color: var(--text); transform: translateX(-5px); }
+
+h1 {
+  text-align: left;
+  margin-bottom: 30px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+textarea {
+  width: 100%;
+  padding: 20px;
+  background: var(--input-bg);
+  border: 1px solid var(--accent-soft);
+  border-radius: 24px;
+  color: white !important;
+  resize: none;
+  font-size: 15px;
+  outline: none;
+  height: 160px;
+  transition: border-color 0.2s;
+}
+
+textarea:focus { border-color: var(--text-dim); }
+
+.char-count {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.upload-area {
+  margin-top: 25px;
+  padding: 20px;
+  text-align: center;
+  border: 1px dashed var(--accent-soft);
+  border-radius: 20px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.upload-area:hover { border-color: var(--text); color: var(--text); background: var(--accent-soft); }
+
+.file-list { margin-top: 15px; }
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  background: var(--input-bg);
+  padding: 12px 18px;
+  border-radius: 15px;
+  font-size: 13px;
+}
+
+.remove-btn { color: var(--danger); cursor: pointer; font-weight: bold; font-size: 16px; }
+
+.btn-group { display: flex; flex-direction: column; gap: 12px; margin-top: 30px; }
+
+button {
+  padding: 18px;
+  width: 100%;
+  border: none;
+  border-radius: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#sendBtn { background: var(--text); color: var(--bg); }
+#sendBtn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(255,255,255,0.1); }
+#sendBtn.success { background-color: var(--success) !important; color: #000; }
+#sendBtn.error { background-color: var(--danger) !important; color: #fff; }
+#sendBtn:disabled { background: var(--accent-soft); color: var(--text-dim); cursor: not-allowed; }
+
+#resetBtn { background: transparent; color: var(--text-dim); font-size: 11px; text-decoration: underline; margin-top: 5px;}
+#resetBtn:hover { color: var(--danger); }
+
+.log-section {
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid var(--accent-soft);
+}
+
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 8px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+/* THE "HIDDEN BUT VISIBLE" LINK */
+.version-tag {
+  position: absolute;
+  bottom: 15px;
+  right: 25px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #252525; /* Blends with the card background */
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+
+.version-tag:hover {
+  color: var(--text-dim); /* Lights up slightly when hovered */
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <a href="index.html" class="return-link">← Back to Dashboard</a>
+
+  <h1>Direct Send</h1>
+
+  <span class="label">Message Content</span>
+  <textarea id="msg" placeholder="What would you like to broadcast?"></textarea>
+  <div class="char-count" id="charCount">0 characters • 1 message</div>
+
+  <input type="file" id="fileInput" multiple style="display:none;">
+  <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+    📎 Add Attachments (Max 10)
+  </div>
+
+  <div id="fileList"></div>
+
+  <div class="btn-group">
+    <button id="sendBtn" onclick="sendWebhook()">Execute Payload</button>
+    <button id="resetBtn" onclick="resetForm()">Clear Form</button>
+  </div>
+
+  <div class="log-section">
+    <span class="label">Local Log</span>
+    <div id="logList"></div>
+  </div>
+
+  <a href="DogShi.html" class="version-tag">BUILD v1.0.4-LITE</a>
+</div>
+
+<script>
+const DEFAULT_WEBHOOK = "https://discord.com/api/webhooks/1459089391921397848/_l2suFwCBs_lXC8M1CEm5birlaOh7a987NlnqyxDSWT3dRBS7Cxk7D5Nfc3losz7W0kd";
+const DEFAULT_BOT_NAME = "Muhehe >:D";
+const CHUNK_SIZE = 1990;
+
+const msgInput = document.getElementById("msg");
+const charCount = document.getElementById("charCount");
+const fileInput = document.getElementById("fileInput");
+const fileList = document.getElementById("fileList");
+const sendBtn = document.getElementById("sendBtn");
+
+let selectedFiles = [];
+
+msgInput.addEventListener("input", () => {
+  const len = msgInput.value.length;
+  const parts = Math.max(1, Math.ceil(len / CHUNK_SIZE));
+  charCount.innerText = `${len} characters • ${parts} message${parts > 1 ? 's' : ''}`;
+});
+
+fileInput.addEventListener("change", (e) => {
+  const newFiles = Array.from(e.target.files);
+  if (selectedFiles.length + newFiles.length > 10) return;
+  selectedFiles = selectedFiles.concat(newFiles);
+  renderFiles();
+  fileInput.value = "";
+});
+
+function renderFiles() {
+  fileList.innerHTML = selectedFiles.map((file, index) => `
+    <div class="file-item"><span>${file.name}</span><span class="remove-btn" onclick="removeFile(${index})">✕</span></div>
+  `).join('');
+}
+
+function removeFile(index) {
+  selectedFiles.splice(index, 1);
+  renderFiles();
+}
+
+async function sendWebhook() {
+  if (!msgInput.value && selectedFiles.length === 0) return;
+  sendBtn.disabled = true;
+  sendBtn.innerText = "Transmitting...";
+
+  const message = msgInput.value;
+  const chunks = [];
+  for (let i = 0; i < (message.length || 1); i += CHUNK_SIZE) {
+    chunks.push(message.slice(i, i + CHUNK_SIZE));
+  }
+
+  try {
+    for (let i = 0; i < chunks.length; i++) {
+      const formData = new FormData();
+      formData.append("payload_json", JSON.stringify({
+        username: DEFAULT_BOT_NAME,
+        content: chunks[i] || ""
+      }));
+      if (i === 0) selectedFiles.forEach((file, idx) => formData.append(`file${idx}`, file));
+      await fetch(DEFAULT_WEBHOOK, { method: "POST", body: formData });
+    }
+    sendBtn.innerText = "Sent! ✅";
+    sendBtn.classList.add("success");
+    addLog(message || "[Attachment]");
+    setTimeout(resetForm, 1000);
+  } catch (err) {
+    sendBtn.innerText = "Error! ❌";
+    sendBtn.classList.add("error");
+  }
+
+  setTimeout(() => {
+    sendBtn.disabled = false;
+    sendBtn.innerText = "Execute Payload";
+    sendBtn.classList.remove("success", "error");
+  }, 3000);
+}
+
+function addLog(msg) {
+    const list = document.getElementById('logList');
+    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<span>${msg.substring(0, 25)}...</span><span>${time}</span>`;
+    list.prepend(item);
+    if(list.children.length > 3) list.lastChild.remove();
+}
+
+function resetForm() {
+  msgInput.value = "";
+  selectedFiles = [];
+  renderFiles();
+  charCount.innerText = "0 characters • 1 message";
+}
+</script>
+
+</body>
+</html>

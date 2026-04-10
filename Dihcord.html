@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glasscord</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --blurple: #5865f2;
+            --text: #ffffff;
+            --text-dim: #b5bac1;
+        }
+
+        /* --- MODERN SCROLLBAR START --- */
+        .messages {
+            scrollbar-gutter: stable; /* Keeps content from jumping left when scrollbar appears */
+        }
+
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0); /* Invisible by default */
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+            transition: 0.3s;
+        }
+
+        /* Reveal on hover */
+        .messages:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .messages::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Firefox Support */
+        @supports (scrollbar-width: thin) {
+            .messages {
+                scrollbar-width: thin;
+                scrollbar-color: transparent transparent;
+            }
+            .messages:hover {
+                scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+            }
+        }
+        /* --- MODERN SCROLLBAR END --- */
+
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #1e1f22 0%, #2b2d31 50%, #5865f2 100%);
+            background-attachment: fixed; overflow: hidden;
+        }
+
+        #overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px); display: flex; align-items: center; justify-content: center; z-index: 1000;
+        }
+
+        .glass-modal {
+            background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+            padding: 40px; border-radius: 20px; width: 400px; text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .glass-container {
+            width: 90vw; height: 85vh; background: var(--glass-bg); backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); border-radius: 24px; display: flex;
+            overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .sidebar { width: 260px; background: rgba(0, 0, 0, 0.2); border-right: 1px solid var(--glass-border); padding: 20px; }
+
+        .chat-area { flex-grow: 1; display: flex; flex-direction: column; }
+
+        .channel-tab { background: var(--blurple); padding: 12px; border-radius: 8px; color: white; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+
+        .messages { flex-grow: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+        .msg { animation: fadeIn 0.3s ease; }
+        .msg-user { font-weight: 700; color: #fff; margin-right: 8px; }
+        .msg-time { font-size: 0.75rem; color: var(--text-dim); }
+        .msg-text { color: var(--text-dim); margin-top: 4px; display: block; line-height: 1.4; }
+        
+        .msg-img { max-width: 300px; border-radius: 8px; margin-top: 8px; border: 1px solid var(--glass-border); display: block; }
+
+        .input-wrap { padding: 24px; display: flex; align-items: center; gap: 15px; }
+
+        .glass-input {
+            flex-grow: 1; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border);
+            padding: 16px; border-radius: 12px; color: white; outline: none; font-size: 1rem; transition: 0.2s;
+        }
+        .glass-input:focus { border-color: var(--blurple); }
+
+        .icon-btn { color: var(--text-dim); cursor: pointer; font-size: 1.2rem; transition: 0.2s; }
+        .icon-btn:hover { color: white; }
+
+        .setup-input {
+            width: 100%; padding: 12px; margin: 20px 0; background: rgba(0,0,0,0.2); 
+            border: 1px solid var(--glass-border); border-radius: 8px; color: white; text-align: center;
+        }
+
+        .btn {
+            background: var(--blurple); color: white; border: none; padding: 12px 30px; 
+            border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(88, 101, 242, 0.4); }
+
+        .error { color: #ff8e8e; font-size: 0.8rem; margin-top: 8px; }
+        .hidden { display: none !important; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="overlay" class="hidden">
+        <div class="glass-modal">
+            <h1 style="margin:0; color:white;">Glasscord</h1>
+            <p style="color:var(--text-dim);">The no-login real-time chat.</p>
+            <input type="text" id="user-in" class="setup-input" placeholder="Enter Username (3-20 chars)" maxlength="20">
+            <div id="err" class="error"></div>
+            <button class="btn" onclick="join()">Enter Void</button>
+        </div>
+    </div>
+
+    <div class="glass-container">
+        <div class="sidebar">
+            <h3 style="margin-top:0; font-size:1.2rem; color: white;">Channels</h3>
+            <div class="channel-tab"><i class="fa-solid fa-hashtag"></i> general</div>
+        </div>
+
+        <div class="chat-area">
+            <div class="messages" id="chatbox"></div>
+            <div class="input-wrap">
+                <label for="file-in" class="icon-btn"><i class="fa-solid fa-circle-plus"></i></label>
+                <input type="file" id="file-in" accept="image/*" class="hidden">
+                
+                <input type="text" id="msg-in" class="glass-input" placeholder="Message #general...">
+                <i class="fa-solid fa-paper-plane icon-btn" id="send-btn"></i>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLVOGHpx31c4isKP6FBtB2YaAZfaC2fy0",
+            authDomain: "webapp-e4820.firebaseapp.com",
+            projectId: "webapp-e4820",
+            storageBucket: "webapp-e4820.firebasestorage.app",
+            messagingSenderId: "1089476678291",
+            appId: "1:1089476678291:web:bddd4615a6e692acd57366",
+            measurementId: "G-J3PPJZ7EE0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const chatbox = document.getElementById('chatbox');
+        const msgInput = document.getElementById('msg-in');
+        const fileInput = document.getElementById('file-in');
+        
+        let myName = localStorage.getItem('gc_name');
+
+        window.onload = () => { if(!myName) document.getElementById('overlay').classList.remove('hidden'); };
+
+        window.join = async () => {
+            const name = document.getElementById('user-in').value.trim();
+            const err = document.getElementById('err');
+            if (name.length < 3 || name.length > 20) { err.innerText = "Name must be 3-20 characters."; return; }
+            const userRef = ref(db, 'users/' + name.toLowerCase());
+            const snap = await get(userRef);
+            if (snap.exists()) { err.innerText = "Username already exists!"; } 
+            else { await set(userRef, { active: true }); localStorage.setItem('gc_name', name); myName = name; document.getElementById('overlay').classList.add('hidden'); }
+        };
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file); 
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400; 
+                    const scale = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                    push(ref(db, 'chat'), {
+                        user: myName,
+                        type: 'image',
+                        msg: compressedBase64,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    });
+                };
+            };
+        };
+
+        const sendMessage = () => {
+            if (msgInput.value.trim()) {
+                push(ref(db, 'chat'), {
+                    user: myName,
+                    type: 'text',
+                    msg: msgInput.value,
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                });
+                msgInput.value = '';
+            }
+        };
+
+        msgInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+        document.getElementById('send-btn').onclick = sendMessage;
+
+        onChildAdded(ref(db, 'chat'), (data) => {
+            const d = data.val();
+            const div = document.createElement('div');
+            div.className = 'msg';
+            
+            const content = d.type === 'image' 
+                ? `<img src="${d.msg}" class="msg-img">` 
+                : `<span class="msg-text">${d.msg}</span>`;
+
+            div.innerHTML = `<span class="msg-user">${d.user}</span><span class="msg-time">${d.time}</span>${content}`;
+            chatbox.appendChild(div);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        });
+    </script>
+</body>
+</html>

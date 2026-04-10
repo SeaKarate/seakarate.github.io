@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webhook Controller</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card-bg: #141414;
+      --input-bg: #1f1f1f;
+      --accent: #ffffff;
+      --accent-soft: #2a2a2a;
+      --text: #ffffff;
+      --text-dim: #888888;
+      --error: #ff4d4d;
+      --success: #00ff88;
+      --radius: 30px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 60px 20px;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      width: 100%;
+      max-width: 520px;
+      padding: 40px;
+      border-radius: var(--radius);
+      border: 1px solid var(--accent-soft);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    .auth-status {
+      height: 2px;
+      width: 0%;
+      background: var(--accent);
+      margin-bottom: 30px;
+      transition: width 0.5s ease, background 0.5s ease;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 30px;
+      letter-spacing: -1px;
+      text-align: center;
+    }
+
+    .section-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 24px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 14px 20px;
+      background: var(--input-bg);
+      border: 1px solid var(--accent-soft);
+      border-radius: 20px;
+      color: white !important;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--text-dim);
+      background: #252525;
+    }
+
+    textarea {
+      resize: none; 
+      height: 120px;
+      margin-bottom: 8px;
+    }
+
+    .options-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+      margin-bottom: 24px;
+    }
+
+    .chip {
+      background: var(--input-bg);
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 11px;
+      cursor: pointer;
+      border: 1px solid var(--accent-soft);
+      transition: 0.2s;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .chip.active {
+      border-color: var(--text);
+      color: var(--text);
+      background: var(--accent-soft);
+    }
+
+    .file-drop {
+      border: 1px dashed var(--accent-soft);
+      padding: 18px;
+      border-radius: 20px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: 0.2s;
+    }
+
+    .file-drop:hover { border-color: var(--text); color: var(--text); }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 18px;
+      background: var(--input-bg);
+      border-radius: 15px;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .btn-main {
+      width: 100%;
+      padding: 18px;
+      border-radius: 22px;
+      border: none;
+      background: var(--text);
+      color: var(--bg);
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      margin-top: 10px;
+    }
+
+    .btn-main:disabled { background: var(--accent-soft); color: var(--text-dim); cursor: not-allowed; transform: scale(1); }
+    .btn-main:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(255,255,255,0.1); }
+
+    .btn-reset {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 11px;
+      margin-top: 20px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .history-box {
+      margin-top: 35px;
+      padding-top: 25px;
+      border-top: 1px solid var(--accent-soft);
+    }
+
+    .history-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    /* --- UPDATED LINK STYLING --- */
+    .switch-links-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 40px;
+    }
+
+    .switch-link {
+      display: block;
+      text-align: center;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .switch-link:hover { color: var(--text); }
+
+    .build-label {
+      position: absolute;
+      bottom: 20px;
+      right: 30px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #1a1a1a; 
+      text-decoration: none;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .build-label:hover { color: var(--text-dim); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="auth-status" id="statusBar"></div>
+  <h1>Webhook Controller</h1>
+
+  <span class="section-label">Identity Verification</span>
+  <div class="input-row">
+    <input type="text" id="uname" placeholder="Username">
+    <input type="password" id="pw" placeholder="Password">
+  </div>
+
+  <span class="section-label">Target Destination</span>
+  <input type="text" id="webhook" placeholder="Discord Webhook URL">
+  <div class="options-row">
+    <div class="chip" id="chipUrl" onclick="toggleUrl()">Use Default URL</div>
+  </div>
+
+  <span class="section-label">Sender Configuration</span>
+  <input type="text" id="botname" placeholder="Bot Display Name" style="margin-bottom: 10px;">
+  <div class="options-row">
+    <div class="chip" id="chipBot" onclick="toggleBot()">Use Default Bot Name</div>
+  </div>
+
+  <span class="section-label">Payload Message</span>
+  <textarea id="msg" placeholder="Type your message..."></textarea>
+
+  <span class="section-label">Attachments</span>
+  <input type="file" id="fileInput" multiple style="display: none;">
+  <div class="file-drop" onclick="document.getElementById('fileInput').click()">
+    Select up to 10 files
+  </div>
+  <div id="fileList"></div>
+
+  <button class="btn-main" id="sendBtn" onclick="sendPayload()" disabled>Locked</button>
+  <button class="btn-reset" onclick="resetApp()">Wipe All Fields</button>
+
+  <div class="history-box">
+    <span class="section-label">Recent Transmission</span>
+    <div id="historyList"></div>
+  </div>
+
+  <div class="switch-links-wrap">
+    <a href="FreeToUse.html" class="switch-link">Switch to Simple View →</a>
+    <a href="Dihcord.html" class="switch-link">Go To Dihcord →</a>
+  </div>
+
+  <a href="DogShi.html" class="build-label">BUILD v3.1.2-STABLE</a>
+</div>
+
+<script>
+  const USERS = { "admin": "1234", "sea": "karate", "seakarate": "HelloWorld" };
+  const DEFAULT_WEBHOOK = "https://discord.com/api/webhooks/1459089391921397848/_l2suFwCBs_lXC8M1CEm5birlaOh7a987NlnqyxDSWT3dRBS7Cxk7D5Nfc3losz7W0kd";
+  const DEFAULT_BOT = "Muhehe >:D";
+
+  let files = [];
+  let useDefaultUrl = false;
+  let useDefaultBot = false;
+
+  function validate() {
+    const u = document.getElementById('uname').value;
+    const p = document.getElementById('pw').value;
+    const btn = document.getElementById('sendBtn');
+    const bar = document.getElementById('statusBar');
+
+    if (USERS[u] === p) {
+      btn.disabled = false;
+      btn.innerText = "Execute Transmission";
+      bar.style.width = "100%";
+      bar.style.background = "var(--success)";
+    } else {
+      btn.disabled = true;
+      btn.innerText = "Locked";
+      bar.style.width = (u || p) ? "100%" : "0%";
+      bar.style.background = "var(--error)";
+    }
+  }
+
+  document.getElementById('uname').addEventListener('input', validate);
+  document.getElementById('pw').addEventListener('input', validate);
+
+  function toggleUrl() {
+    useDefaultUrl = !useDefaultUrl;
+    const input = document.getElementById('webhook');
+    document.getElementById('chipUrl').classList.toggle('active');
+    input.value = useDefaultUrl ? DEFAULT_WEBHOOK : "";
+    input.disabled = useDefaultUrl;
+  }
+
+  function toggleBot() {
+    useDefaultBot = !useDefaultBot;
+    const input = document.getElementById('botname');
+    document.getElementById('chipBot').classList.toggle('active');
+    input.value = useDefaultBot ? DEFAULT_BOT : "";
+    input.disabled = useDefaultBot;
+  }
+
+  document.getElementById('fileInput').addEventListener('change', (e) => {
+    files = Array.from(e.target.files).slice(0, 10);
+    renderFiles();
+  });
+
+  function renderFiles() {
+    document.getElementById('fileList').innerHTML = files.map((f, i) => `
+      <div class="file-item"><span>${f.name}</span><span style="cursor:pointer" onclick="removeFile(${i})">✕</span></div>
+    `).join('');
+  }
+
+  function removeFile(i) { files.splice(i, 1); renderFiles(); }
+
+  async function sendPayload() {
+    const btn = document.getElementById('sendBtn');
+    const url = document.getElementById('webhook').value;
+    if (!url) return;
+
+    btn.innerText = "Transmitting...";
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('payload_json', JSON.stringify({
+      username: document.getElementById('botname').value || "Pro Bot",
+      content: document.getElementById('msg').value
+    }));
+    files.forEach((f, i) => formData.append(`file${i}`, f));
+
+    try {
+      await fetch(url, { method: 'POST', body: formData });
+      btn.innerText = "Delivered";
+      btn.style.background = "var(--success)";
+      logHistory(document.getElementById('msg').value || "Attachment");
+      setTimeout(() => { resetApp(false); validate(); btn.style.background = "var(--text)"; }, 2000);
+    } catch {
+      btn.innerText = "Failed";
+      btn.style.background = "var(--error)";
+      setTimeout(validate, 2000);
+    }
+  }
+
+  function logHistory(m) {
+    let h = JSON.parse(localStorage.getItem('wh_v3') || '[]');
+    h.unshift({ m, t: new Date().toLocaleTimeString() });
+    localStorage.setItem('wh_v3', JSON.stringify(h.slice(0, 3)));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const h = JSON.parse(localStorage.getItem('wh_v3') || '[]');
+    document.getElementById('historyList').innerHTML = h.map(i => `
+      <div class="history-item"><span>${i.m.substring(0, 40)}...</span><span>${i.t}</span></div>
+    `).join('') || '<span style="font-size:11px;color:var(--text-dim)">Clean slate</span>';
+  }
+
+  function resetApp(all = true) {
+    if(all) { document.getElementById('uname').value = ""; document.getElementById('pw').value = ""; }
+    document.getElementById('msg').value = "";
+    document.getElementById('webhook').value = "";
+    document.getElementById('botname').value = "";
+    document.getElementById('webhook').disabled = false;
+    document.getElementById('botname').disabled = false;
+    useDefaultUrl = false; useDefaultBot = false;
+    document.getElementById('chipUrl').classList.remove('active');
+    document.getElementById('chipBot').classList.remove('active');
+    files = []; renderFiles();
+    validate();
+  }
+
+  window.onload = renderHistory;
+</script>
+</body>
+</html>
